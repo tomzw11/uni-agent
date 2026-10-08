@@ -1,0 +1,17 @@
+# Minimal uni-agent GRPO demo task config: react agent over a local sandbox.
+# Only `shell` + `submit` are exposed to keep the smoke run cheap.
+- name: react_simple
+  sandbox:
+    provider: local
+    runtime_timeout: 300
+  agent:
+    name: react
+    max_steps: 10
+    tools:
+      - name: stateful_shell
+        command_timeout: 30
+      - name: submit
+    model:
+      temperature: 1.0
+      top_p: 1.0
+      max_total_tokens: 4096

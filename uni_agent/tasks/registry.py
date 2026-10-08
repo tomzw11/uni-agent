@@ -22,6 +22,7 @@ TASK_REGISTRY: dict[str, type[Task]] = {}
 TASK_MODULES: dict[str, str] = {
     "swe_bench": "uni_agent.tasks.swe_bench.task",
     "swe_rebench": "uni_agent.tasks.swe_rebench.task",
+    "react_simple": "uni_agent.tasks.react_simple.task",
 }
 
 

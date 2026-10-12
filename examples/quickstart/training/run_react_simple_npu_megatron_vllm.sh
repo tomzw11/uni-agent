@@ -137,11 +137,12 @@ python3 -m verl.trainer.main_ppo \
     actor_rollout_ref.actor.megatron.tensor_model_parallel_size=${train_tp} \
     actor_rollout_ref.actor.megatron.pipeline_model_parallel_size=${train_pp} \
     actor_rollout_ref.actor.megatron.context_parallel_size=${train_cp} \
+    # NPU(mbridge) 保守配置：关闭 GPU 脚本照搬的 flash 类 fusion，避免 vector core 异常
     +actor_rollout_ref.actor.megatron.override_transformer_config.apply_rope_fusion=False \
-    +actor_rollout_ref.actor.megatron.override_transformer_config.masked_softmax_fusion=True \
-    +actor_rollout_ref.actor.megatron.override_transformer_config.bias_activation_fusion=True \
-    +actor_rollout_ref.actor.megatron.override_transformer_config.bias_dropout_fusion=True \
-    +actor_rollout_ref.actor.megatron.override_transformer_config.gradient_accumulation_fusion=True \
+    +actor_rollout_ref.actor.megatron.override_transformer_config.masked_softmax_fusion=False \
+    +actor_rollout_ref.actor.megatron.override_transformer_config.bias_activation_fusion=False \
+    +actor_rollout_ref.actor.megatron.override_transformer_config.bias_dropout_fusion=False \
+    +actor_rollout_ref.actor.megatron.override_transformer_config.gradient_accumulation_fusion=False \
     +actor_rollout_ref.actor.megatron.override_transformer_config.deallocate_pipeline_outputs=True \
     +actor_rollout_ref.actor.megatron.override_transformer_config.persist_layer_norm=True \
     +actor_rollout_ref.actor.megatron.override_transformer_config.recompute_method=uniform \

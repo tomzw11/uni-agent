@@ -23,6 +23,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 import shutil
 import stat
 from pathlib import Path
@@ -64,7 +65,17 @@ def _is_correct(predicted: str | None, gold: str, answer_type: str) -> bool:
             return round(float(predicted.replace(",", "")), 2) == round(float(gold), 2)
         except ValueError:
             return False
+    if answer_type == "em":
+        return _normalize(predicted) == _normalize(gold)
     return predicted.strip() == str(gold).strip()
+
+
+def _normalize(text: str) -> str:
+    """HotpotQA-style EM normalization: lowercase, drop articles/punct, collapse spaces."""
+    text = text.lower()
+    text = re.sub(r"\b(a|an|the)\b", " ", text)
+    text = re.sub(r"[^a-z0-9\u4e00-\u9fff ]", " ", text)
+    return " ".join(text.split())
 
 
 def _finish_answer(tool_calls: list[dict[str, Any]]) -> str | None:
@@ -88,11 +99,14 @@ class FinanceKbTask(Task):
     name = "finance_kb"
     config_model = FinanceKbTaskConfig
 
-    def _mount_kb(self, kb_name: str) -> Path:
+    def _mount_kb(self, kb_name: str, kb_subdir: str = "") -> Path:
         cfg: FinanceKbTaskConfig = self.config  # type: ignore[assignment]
         if not cfg.kb_source:
             raise ValueError("finance_kb: config.kb_source is not set (path to the generated kb/ directory)")
         source = Path(cfg.kb_source)
+        if kb_subdir:
+            # per-episode slice: kb_source points at the parent, kb_subdir at <qid>/
+            source = source / kb_subdir
         if not source.is_absolute():
             source = Path.cwd() / source
         if not source.is_dir():
@@ -154,8 +168,9 @@ class FinanceKbTask(Task):
         ground_truth = str(metadata.get("ground_truth", ""))
         answer_type = str(metadata.get("answer_type", "number"))
         kb_name = str(metadata.get("kb_root", "kb"))
+        kb_subdir = str(metadata.get("kb_subdir", "") or "")
 
-        self._mount_kb(kb_name)
+        self._mount_kb(kb_name, kb_subdir)
         async with self.build_sandbox() as sandbox:
             agent = self.build_agent()
             agent_result = await agent.run(sandbox=sandbox, messages=cfg.prompt)
